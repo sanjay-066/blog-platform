@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>404 – Page Not Found · Blog Platform</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body>
+<nav class="navbar">
+  <div class="container nav-inner">
+    <a href="/" class="nav-brand">📝Blog<span class="brand-dot">.</span><span>Platform</span></a>
+    <div class="nav-links" id="nav-links"></div>
+  </div>
+</nav>
+<main style="display:grid;place-items:center">
+  <div class="text-center" style="padding:4rem 1rem">
+    <p style="font-size:7rem;font-weight:900;color:var(--clr-primary-mid);line-height:1;margin-bottom:.5rem">404</p>
+    <h1 style="font-size:1.75rem;margin-bottom:.75rem">Page Not Found</h1>
+    <p class="text-muted" style="max-width:360px;margin:0 auto 2rem">
+      The page you're looking for doesn't exist or has been moved.
+    </p>
+    <div class="d-flex gap-sm" style="justify-content:center;flex-wrap:wrap">
+      <a href="/" class="btn btn-primary btn-lg">← Go Home</a>
+      <button class="btn btn-surface btn-lg" onclick="history.back()">Go Back</button>
+    </div>
+  </div>
+</main>
+<script src="/static/js/app.js"></script>
+</body>
+</html>

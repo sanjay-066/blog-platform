@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>New Post – Blog Platform</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,400;0,14..32,600;0,14..32,700;0,14..32,800;0,14..32,900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body>
+<nav class="navbar">
+  <div class="container nav-inner">
+    <a href="/" class="nav-brand">📝Blog<span class="brand-dot">.</span><span>Platform</span></a>
+    <div class="nav-links" id="nav-links"></div>
+  </div>
+</nav>
+
+<main>
+  <div class="container" style="max-width:740px">
+
+    <div class="section-header mb-3" style="margin-top:.5rem">
+      <div>
+        <h1 style="font-size:1.65rem">✏️ New Post</h1>
+        <p class="text-muted text-sm mt-1">Share your thoughts with the world.</p>
+      </div>
+      <a href="/" class="btn btn-ghost btn-sm">← Back</a>
+    </div>
+
+    <div class="card editor-card">
+
+      <!-- Toolbar -->
+      <div class="editor-toolbar" role="toolbar" aria-label="Formatting shortcuts">
+        <button type="button" class="editor-toolbar-btn" data-wrap="**" title="Bold (Ctrl+B)"><strong>B</strong></button>
+        <button type="button" class="editor-toolbar-btn" data-wrap="*" title="Italic (Ctrl+I)"><em>I</em></button>
+        <div class="editor-toolbar-sep"></div>
+        <button type="button" class="editor-toolbar-btn" data-prefix="## " title="Heading">H2</button>
+        <button type="button" class="editor-toolbar-btn" data-prefix="### " title="Sub-heading">H3</button>
+        <div class="editor-toolbar-sep"></div>
+        <button type="button" class="editor-toolbar-btn" data-prefix="- " title="Bullet list">• List</button>
+        <button type="button" class="editor-toolbar-btn" data-prefix="> " title="Blockquote">" Quote</button>
+        <button type="button" class="editor-toolbar-btn" data-wrap="`" title="Inline code">&lt;/&gt;</button>
+        <div class="editor-toolbar-sep"></div>
+        <button type="button" class="editor-toolbar-btn" id="preview-toggle" title="Toggle preview">👁 Preview</button>
+        <div style="flex:1"></div>
+        <span class="autosave-indicator" id="autosave-indicator">✅ Draft saved</span>
+      </div>
+
+      <div class="card-body">
+        <form id="post-form" novalidate>
+
+          <div class="form-group" id="group-title" style="margin-bottom:1.5rem">
+            <input class="form-input" type="text" id="title" name="title"
+              placeholder="Your post title…"
+              maxlength="200" required
+              style="font-size:1.2rem;font-weight:700;border-color:transparent;border-bottom-color:var(--clr-border);border-radius:0;padding-left:0;background:transparent;box-shadow:none" />
+            <div class="field-footer">
+              <span class="form-error" id="err-title" style="margin-top:0">Title is required.</span>
+              <span class="char-count" id="title-count">0 / 200</span>
+            </div>
+          </div>
+
+          <div class="form-group" id="group-body">
+            <textarea class="form-textarea" id="body" name="body"
+              placeholder="Start writing your story…&#10;&#10;Use the toolbar above to format text. Markdown-style shortcuts work too."
+              style="min-height:320px;resize:none;line-height:1.8;font-size:1rem" required></textarea>
+            <div class="field-footer">
+              <span class="form-error" id="err-body" style="margin-top:0">Content is required.</span>
+              <span class="char-count" id="body-count">0</span>
+            </div>
+          </div>
+
+          <!-- Preview pane (hidden by default) -->
+          <div class="editor-preview" id="preview-pane" style="display:none">
+            <div class="post-body" id="preview-content" style="color:var(--clr-text-muted)">Start typing to see a preview…</div>
+          </div>
+
+          <div style="display:flex;gap:.75rem;justify-content:flex-end;flex-wrap:wrap;margin-top:.5rem">
+            <button type="button" class="btn btn-ghost" onclick="history.back()">Discard</button>
+            <button type="submit" class="btn btn-primary btn-lg" id="submit-btn">🚀 Publish</button>
+          </div>
+
+        </form>
+      </div>
+
+      <!-- Live stats bar -->
+      <div class="editor-meta" id="editor-meta">
+        <span>Words: <strong id="word-count">0</strong></span>
+        <span>Reading time: <strong id="read-time">0 min</strong></span>
+        <span class="hidden" id="draft-note" style="color:var(--clr-text-muted)">Draft saved</span>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<script src="/static/js/app.js"></script>
+<script>
+  const titleEl = document.getElementById('title');
+  const bodyEl  = document.getElementById('body');
+
+  // ── Auto-resize ───────────────────────────────────────────────────────────────
+  autoResize(bodyEl);
+
+  // ── Char counter title ────────────────────────────────────────────────────────
+  addCharCounter(titleEl, document.getElementById('title-count'), 200);
+
+  // ── Live stats ────────────────────────────────────────────────────────────────
+  function updateStats() {
+    const text = bodyEl.value;
+    const wc   = wordCount(text);
+    const mins = Math.max(1, Math.ceil(wc / 200));
+    document.getElementById('word-count').textContent = wc;
+    document.getElementById('read-time').textContent  = `${mins} min`;
+    document.getElementById('body-count').textContent = `${text.length} chars`;
+  }
+  bodyEl.addEventListener('input', updateStats);
+  updateStats();
+
+  // ── Autosave ──────────────────────────────────────────────────────────────────
+  const clearDraft = initAutosave('new', titleEl, bodyEl, document.getElementById('autosave-indicator'));
+
+  // ── Toolbar formatting ────────────────────────────────────────────────────────
+  document.querySelectorAll('.editor-toolbar-btn[data-wrap]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const wrap = btn.dataset.wrap;
+      const start = bodyEl.selectionStart, end = bodyEl.selectionEnd;
+      const selected = bodyEl.value.slice(start, end) || 'text';
+      const replacement = `${wrap}${selected}${wrap}`;
+      bodyEl.setRangeText(replacement, start, end, 'select');
+      bodyEl.focus();
+      bodyEl.dispatchEvent(new Event('input'));
+    });
+  });
+  document.querySelectorAll('.editor-toolbar-btn[data-prefix]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const prefix = btn.dataset.prefix;
+      const start  = bodyEl.selectionStart;
+      const lineStart = bodyEl.value.lastIndexOf('\n', start - 1) + 1;
+      bodyEl.setRangeText(prefix, lineStart, lineStart, 'end');
+      bodyEl.focus();
+      bodyEl.dispatchEvent(new Event('input'));
+    });
+  });
+
+  // Keyboard shortcuts
+  bodyEl.addEventListener('keydown', (e) => {
+    if (!e.ctrlKey && !e.metaKey) return;
+    if (e.key === 'b') { e.preventDefault(); document.querySelector('[data-wrap="**"]').click(); }
+    if (e.key === 'i') { e.preventDefault(); document.querySelector('[data-wrap="*"]').click(); }
+  });
+
+  // ── Preview toggle ────────────────────────────────────────────────────────────
+  let previewOpen = false;
+  document.getElementById('preview-toggle').addEventListener('click', () => {
+    previewOpen = !previewOpen;
+    const pane = document.getElementById('preview-pane');
+    pane.style.display = previewOpen ? 'block' : 'none';
+    document.getElementById('preview-toggle').textContent = previewOpen ? '✏️ Edit' : '👁 Preview';
+    if (previewOpen) updatePreview();
+  });
+  function updatePreview() {
+    const pc = document.getElementById('preview-content');
+    const text = bodyEl.value.trim();
+    if (!text) { pc.innerHTML = '<span style="color:var(--clr-text-muted)">Nothing to preview yet…</span>'; return; }
+    pc.innerHTML = '<h2>' + escapeHtml(titleEl.value || 'Untitled') + '</h2>' +
+      text.split(/\n\n+/).map(p => `<p>${escapeHtml(p).replace(/\n/g,'<br>')}</p>`).join('');
+    pc.classList.add('active');
+  }
+  bodyEl.addEventListener('input', () => { if (previewOpen) updatePreview(); });
+  titleEl.addEventListener('input', () => { if (previewOpen) updatePreview(); });
+
+  // ── Validation helpers ────────────────────────────────────────────────────────
+  function setErr(errId, grpId, show) {
+    document.getElementById(errId).style.display = show ? 'flex' : 'none';
+    document.getElementById(grpId).classList.toggle('field-error', show);
+  }
+
+  // ── Submit ────────────────────────────────────────────────────────────────────
+  document.getElementById('post-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!state.user) { window.location.href = '/login'; return; }
+
+    const title = titleEl.value.trim();
+    const body  = bodyEl.value.trim();
+    const btn   = document.getElementById('submit-btn');
+
+    let valid = true;
+    setErr('err-title', 'group-title', !title); if (!title) valid = false;
+    setErr('err-body',  'group-body',  !body);  if (!body)  valid = false;
+    if (!valid) return;
+
+    setButtonLoading(btn, true);
+    const { ok, data } = await api.post('/api/posts', { title, body });
+
+    if (ok) {
+      clearDraft();
+      showAlert('Post published! 🎉', 'success');
+      setTimeout(() => window.location.href = `/post/${data.post.id}`, 700);
+    } else {
+      showAlert(data.error || 'Failed to publish.');
+      setButtonLoading(btn, false);
+    }
+  });
+</script>
+</body>
+</html>

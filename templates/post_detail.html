@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Loading… – Blog Platform</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,400;0,14..32,600;0,14..32,700;0,14..32,800;0,14..32,900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body>
+
+<!-- Reading progress bar -->
+<div id="reading-progress" role="progressbar" aria-hidden="true"></div>
+
+<!-- Navbar -->
+<nav class="navbar">
+  <div class="container nav-inner">
+    <a href="/" class="nav-brand">📝Blog<span class="brand-dot">.</span><span>Platform</span></a>
+    <div class="nav-links" id="nav-links"></div>
+  </div>
+</nav>
+
+<!-- Confirm modal -->
+<div class="modal-backdrop" id="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+  <div class="modal">
+    <span class="modal-icon">🗑️</span>
+    <h3 id="confirm-title">Confirm</h3>
+    <p id="confirm-msg">Are you sure?</p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="confirm-cancel">Cancel</button>
+      <button class="btn btn-danger" id="confirm-ok">Delete</button>
+    </div>
+  </div>
+</div>
+
+<button id="back-to-top" aria-label="Back to top">↑</button>
+
+<main>
+  <div class="container" style="max-width:780px">
+
+    <!-- ── Skeleton (loading) ─────────────────────────────── -->
+    <div id="post-skeleton">
+      <div class="skeleton sk-line" style="height:2rem;width:65%;margin-bottom:1rem"></div>
+      <div class="d-flex gap-sm mb-3">
+        <div class="skeleton" style="width:2rem;height:2rem;border-radius:50%"></div>
+        <div class="skeleton sk-line" style="width:120px;height:1rem;margin-top:.5rem"></div>
+      </div>
+      <div class="skeleton sk-block" style="height:180px;margin-bottom:1rem"></div>
+      <div class="skeleton sk-line mb-1" style="width:90%"></div>
+      <div class="skeleton sk-line mb-1" style="width:75%"></div>
+      <div class="skeleton sk-line" style="width:55%"></div>
+    </div>
+
+    <!-- ── Post not found ────────────────────────────────── -->
+    <div id="post-not-found" class="hidden empty-state" style="margin-top:4rem">
+      <span class="empty-icon">🔍</span>
+      <h3>Post not found</h3>
+      <p>This post may have been deleted or doesn't exist.</p>
+      <a href="/" class="btn btn-primary">← Go Home</a>
+    </div>
+
+    <!-- ── Post content ───────────────────────────────────── -->
+    <div id="post-content" class="hidden">
+
+      <!-- Breadcrumb -->
+      <nav aria-label="Breadcrumb" class="text-sm text-muted mb-2">
+        <a href="/" class="text-muted" style="hover:color:var(--clr-primary)">Home</a>
+        <span style="margin:0 .35rem;color:var(--clr-border)">›</span>
+        <span id="breadcrumb-title" class="text-soft"></span>
+      </nav>
+
+      <!-- Main post card -->
+      <div class="card mb-3">
+
+        <!-- Hero section (gradient header) -->
+        <div class="post-hero">
+          <div class="d-flex align-center gap-sm mb-2 flex-wrap">
+            <span class="chip chip-muted" id="read-time-chip">📖 … min read</span>
+            <span class="chip chip-muted" id="post-date-chip">🕒 …</span>
+          </div>
+          <h1 id="post-title"></h1>
+        </div>
+
+        <!-- Author bar -->
+        <div class="author-bar" id="author-bar">
+          <span id="post-avatar-lg"></span>
+          <div class="author-bar-info">
+            <strong id="post-author"></strong>
+            <span id="post-updated-bar" style="display:none">Updated <span id="post-updated-date"></span></span>
+          </div>
+          <!-- Owner actions inline -->
+          <div id="post-owner-actions" class="d-flex gap-sm hidden">
+            <a href="#" id="edit-link" class="btn btn-surface btn-sm">✏️ Edit</a>
+            <button class="btn btn-ghost btn-sm" id="delete-post-btn" aria-label="Delete post">🗑️ Delete</button>
+          </div>
+        </div>
+
+        <!-- Body -->
+        <div class="post-body-wrap">
+          <div class="post-body" id="post-body"></div>
+        </div>
+
+      </div>
+
+      <!-- ── Comments ───────────────────────────────────────── -->
+      <div class="card comments-section">
+
+        <div class="comments-header">
+          <h2 class="d-flex align-center gap-sm" style="font-size:1.15rem">
+            💬 Comments
+            <span class="chip" id="comment-count-badge">0</span>
+          </h2>
+        </div>
+
+        <!-- Comment form (logged in) -->
+        <div class="comment-form-area" id="comment-form-wrapper" style="display:none">
+          <div class="d-flex align-center gap-sm mb-2">
+            <span id="current-user-avatar"></span>
+            <h4 class="mb-0" style="color:var(--clr-text-muted)">Leave a comment</h4>
+          </div>
+          <form id="comment-form" novalidate>
+            <div class="form-group" id="group-comment" style="margin-bottom:.75rem">
+              <textarea class="form-textarea" id="comment-body"
+                placeholder="Share your thoughts, questions, or feedback…"
+                maxlength="2000" style="min-height:90px;resize:none"></textarea>
+              <div class="field-footer">
+                <span class="form-error" id="err-comment" style="margin-top:0">Please write something.</span>
+                <span class="char-count" id="comment-char-count">0 / 2000</span>
+              </div>
+            </div>
+            <div style="display:flex;justify-content:flex-end">
+              <button type="submit" class="btn btn-primary" id="comment-submit-btn">💬 Post Comment</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Login prompt (logged out) -->
+        <div id="comment-login-prompt" style="display:none;padding:1.25rem 2rem;border-top:1px solid var(--clr-border-light)">
+          <p class="text-center mb-0" style="color:var(--clr-text-muted);font-size:.9rem">
+            🔒 <a href="/login"><strong>Login</strong></a> or <a href="/register"><strong>register</strong></a> to join the conversation.
+          </p>
+        </div>
+
+        <!-- Comment list -->
+        <div class="comment-list" id="comment-list" role="list" aria-live="polite"></div>
+
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<footer>
+  <p>Built with ♥ using Flask &amp; SQLite &nbsp;·&nbsp; <a href="/">Blog Platform</a></p>
+</footer>
+
+<script src="/static/js/app.js"></script>
+<script>
+  const POST_ID = {{ post_id }};
+  let postData = null;
+
+  // ── Load post ──────────────────────────────────────────────────────────────────
+  async function loadPost() {
+    const { ok, data } = await api.get(`/api/posts/${POST_ID}`);
+    document.getElementById('post-skeleton').classList.add('hidden');
+
+    if (!ok || !data.id) {
+      document.getElementById('post-not-found').classList.remove('hidden');
+      return;
+    }
+    postData = data;
+    document.title = `${data.title} – Blog Platform`;
+
+    // Populate header
+    document.getElementById('breadcrumb-title').textContent = data.title;
+    document.getElementById('post-title').textContent       = data.title;
+    document.getElementById('post-author').textContent      = data.author;
+    document.getElementById('post-avatar-lg').innerHTML     = avatarHtml(data.author, 'avatar-lg');
+    document.getElementById('read-time-chip').textContent   = '📖 ' + readingTime(data.body);
+    document.getElementById('post-date-chip').textContent   = '🕒 ' + formatDate(data.created_at);
+
+    const created = new Date(data.created_at);
+    const updated = new Date(data.updated_at);
+    if (Math.abs(updated - created) > 60000) {
+      const el = document.getElementById('post-updated-bar');
+      el.style.display = 'block';
+      document.getElementById('post-updated-date').textContent = formatDate(data.updated_at);
+    }
+
+    // Render body — basic paragraph rendering
+    document.getElementById('post-body').innerHTML =
+      data.body.split(/\n\n+/)
+        .map(p => `<p>${escapeHtml(p).replace(/\n/g, '<br>')}</p>`)
+        .join('');
+
+    // Show owner actions
+    if (state.user && state.user.id === data.author_id) {
+      document.getElementById('edit-link').href = `/edit/${POST_ID}`;
+      document.getElementById('post-owner-actions').classList.remove('hidden');
+    }
+
+    document.getElementById('post-content').classList.remove('hidden');
+    renderComments(data.comments || []);
+
+    // Comment form
+    if (state.user) {
+      document.getElementById('current-user-avatar').innerHTML = avatarHtml(state.user.username);
+      document.getElementById('comment-form-wrapper').style.display = 'block';
+      autoResize(document.getElementById('comment-body'));
+      addCharCounter(document.getElementById('comment-body'), document.getElementById('comment-char-count'), 2000);
+    } else {
+      document.getElementById('comment-login-prompt').style.display = 'block';
+    }
+  }
+
+  // ── Render comments ────────────────────────────────────────────────────────────
+  function renderComments(comments) {
+    const badge = document.getElementById('comment-count-badge');
+    const list  = document.getElementById('comment-list');
+    badge.textContent = comments.length;
+
+    if (!comments.length) {
+      list.innerHTML = `
+        <div class="empty-state" style="padding:2.5rem 1rem">
+          <span class="empty-icon" style="font-size:2.5rem">💬</span>
+          <p>No comments yet. Be the first to start the conversation!</p>
+        </div>`;
+      return;
+    }
+
+    list.innerHTML = comments.map(c => {
+      const isOwn = state.user && state.user.id === c.author_id;
+      return `
+        <div class="comment-item ${isOwn ? 'own' : ''}" role="listitem" id="comment-${c.id}">
+          <div class="comment-header">
+            ${avatarHtml(c.author)}
+            <span class="comment-author">${escapeHtml(c.author)}</span>
+            ${isOwn ? '<span class="chip chip-muted" style="font-size:.68rem">You</span>' : ''}
+            <time class="comment-date" title="${new Date(c.created_at).toLocaleString()}">${formatDate(c.created_at)}</time>
+          </div>
+          <div class="comment-body">${escapeHtml(c.body)}</div>
+          ${isOwn ? `
+            <div class="comment-actions">
+              <button class="btn btn-ghost btn-sm" style="color:var(--clr-danger);font-size:.78rem" onclick="deleteComment(${c.id})">🗑️ Delete</button>
+            </div>` : ''}
+        </div>`;
+    }).join('');
+  }
+
+  // ── Delete post ────────────────────────────────────────────────────────────────
+  document.getElementById('delete-post-btn').addEventListener('click', async () => {
+    if (!await confirmModal('Delete Post', 'This will permanently delete the post and all its comments.')) return;
+    const btn = document.getElementById('delete-post-btn');
+    setButtonLoading(btn, true);
+    const { ok, data } = await api.delete(`/api/posts/${POST_ID}`);
+    if (ok) { showAlert('Post deleted.', 'success'); setTimeout(() => window.location.href = '/', 900); }
+    else { showAlert(data.error || 'Delete failed.'); setButtonLoading(btn, false); }
+  });
+
+  // ── Post comment ───────────────────────────────────────────────────────────────
+  document.getElementById('comment-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const bodyEl = document.getElementById('comment-body');
+    const body   = bodyEl.value.trim();
+    const btn    = document.getElementById('comment-submit-btn');
+    const errEl  = document.getElementById('err-comment');
+    const grpEl  = document.getElementById('group-comment');
+
+    if (!body) {
+      errEl.style.display = 'flex';
+      grpEl.classList.add('field-error');
+      return;
+    }
+    errEl.style.display = 'none';
+    grpEl.classList.remove('field-error');
+
+    setButtonLoading(btn, true);
+    const { ok, data } = await api.post(`/api/posts/${POST_ID}/comments`, { body });
+
+    if (ok) {
+      bodyEl.value = '';
+      bodyEl.style.height = 'auto';
+      document.getElementById('comment-char-count').textContent = '0 / 2000';
+      showAlert('Comment posted! 💬', 'success');
+      // Refresh comment list
+      const { ok: ok2, data: d2 } = await api.get(`/api/posts/${POST_ID}/comments`);
+      if (ok2) renderComments(d2.comments);
+    } else {
+      showAlert(data.error || 'Failed to post comment.');
+    }
+    setButtonLoading(btn, false);
+  });
+
+  // ── Delete comment ─────────────────────────────────────────────────────────────
+  async function deleteComment(commentId) {
+    if (!await confirmModal('Delete Comment', 'Remove this comment permanently?', 'Delete')) return;
+    const { ok, data } = await api.delete(`/api/comments/${commentId}`);
+    if (ok) {
+      document.getElementById(`comment-${commentId}`)?.remove();
+      const badge = document.getElementById('comment-count-badge');
+      badge.textContent = Math.max(0, parseInt(badge.textContent) - 1);
+      showAlert('Comment removed.', 'success');
+
+      // Show empty state if no comments left
+      if (parseInt(badge.textContent) === 0) {
+        document.getElementById('comment-list').innerHTML = `
+          <div class="empty-state" style="padding:2.5rem 1rem">
+            <span class="empty-icon" style="font-size:2.5rem">💬</span>
+            <p>No comments yet. Be the first to start the conversation!</p>
+          </div>`;
+      }
+    } else {
+      showAlert(data.error || 'Delete failed.');
+    }
+  }
+
+  // ── Init ───────────────────────────────────────────────────────────────────────
+  document.addEventListener('DOMContentLoaded', async () => {
+    await loadCurrentUser();
+    renderNavbar(state.user);
+    loadPost();
+  });
+</script>
+</body>
+</html>

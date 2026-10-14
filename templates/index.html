@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Blog Platform – Discover Stories</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,400;0,14..32,600;0,14..32,700;0,14..32,800;0,14..32,900;1,14..32,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body>
+
+<!-- ── Reading progress ────────────────────────────────────── -->
+<div id="reading-progress" role="progressbar" aria-hidden="true"></div>
+
+<!-- ── Navbar ─────────────────────────────────────────────── -->
+<nav class="navbar" role="navigation" aria-label="Main">
+  <div class="container nav-inner">
+    <a href="/" class="nav-brand">📝Blog<span class="brand-dot">.</span><span>Platform</span></a>
+    <div class="nav-links" id="nav-links">
+      <a href="/login"    class="btn btn-ghost   btn-sm">Login</a>
+      <a href="/register" class="btn btn-primary btn-sm">Sign Up →</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ── Delete confirm modal ───────────────────────────────── -->
+<div class="modal-backdrop" id="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+  <div class="modal">
+    <span class="modal-icon">🗑️</span>
+    <h3 id="confirm-title">Delete Post</h3>
+    <p id="confirm-msg">This will permanently delete the post and all its comments. This cannot be undone.</p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="confirm-cancel">Cancel</button>
+      <button class="btn btn-danger" id="confirm-ok">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Back to top ────────────────────────────────────────── -->
+<button id="back-to-top" aria-label="Back to top">↑</button>
+
+<main>
+  <div class="container">
+
+    <!-- Hero -->
+    <section class="hero" id="hero-section">
+      <div class="hero-content">
+        <span class="hero-eyebrow">✨ Open Platform</span>
+        <h1>Discover Stories &amp; Ideas</h1>
+        <p class="hero-sub">Read, write, and connect. Share your thoughts with a community of curious minds.</p>
+        <div class="hero-actions" id="hero-actions">
+          <a href="/register" class="btn btn-primary btn-lg">Get Started Free</a>
+          <a href="#posts" class="btn btn-surface btn-lg">Explore Posts ↓</a>
+        </div>
+        <div class="hero-stats" id="hero-stats">
+          <div class="hero-stat"><span class="hero-stat-num" id="stat-posts">—</span><span class="hero-stat-label">Posts</span></div>
+          <div class="hero-stat"><span class="hero-stat-num" id="stat-reading">📖</span><span class="hero-stat-label">Reading</span></div>
+          <div class="hero-stat"><span class="hero-stat-num" id="stat-free">Free</span><span class="hero-stat-label">Always</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Posts Section -->
+    <section id="posts">
+      <!-- Search -->
+      <div class="search-wrap">
+        <input type="search" class="form-input" id="search-input"
+          placeholder="🔍  Search posts by title or content…" aria-label="Search posts" />
+        <button class="btn btn-primary btn-sm search-btn" id="search-btn">Search</button>
+      </div>
+
+      <div class="posts-toolbar">
+        <h2>Latest Posts</h2>
+        <span class="posts-count" id="posts-count">Loading…</span>
+      </div>
+
+      <div id="posts-list" aria-live="polite"></div>
+      <div class="pagination" id="pagination" role="navigation" aria-label="Posts pages"></div>
+    </section>
+
+  </div>
+</main>
+
+<footer>
+  <p>Built with ♥ using Flask &amp; SQLite &nbsp;·&nbsp; <a href="/">Blog Platform</a> &nbsp;·&nbsp; <a href="/register">Join us</a></p>
+</footer>
+
+<script src="/static/js/app.js"></script>
+<script>
+  let currentPage = 1, currentSearch = '';
+
+  // ── Render post cards ─────────────────────────────────────────────────────────
+  function renderPosts(posts, user) {
+    const container = document.getElementById('posts-list');
+    if (!posts.length) {
+      container.innerHTML = `
+        <div class="empty-state">
+          <span class="empty-icon">${currentSearch ? '🔍' : '📭'}</span>
+          <h3>${currentSearch ? 'No results found' : 'No posts yet'}</h3>
+          <p>${currentSearch ? `Nothing matched "<strong>${escapeHtml(currentSearch)}</strong>". Try different keywords.` : 'Be the first to share something amazing!'}</p>
+          ${user ? '<a href="/create" class="btn btn-primary">✏️ Write First Post</a>' : '<a href="/register" class="btn btn-primary">Join &amp; Write →</a>'}
+        </div>`;
+      return;
+    }
+
+    container.innerHTML = posts.map(p => {
+      const isOwner = user && user.id === p.author_id;
+      const rt = readingTime(p.body || p.excerpt || '');
+      return `
+        <article class="card post-card">
+          <div class="post-card-inner">
+            <a href="/post/${p.id}" class="post-card-link">
+              <h3 class="post-title">${escapeHtml(p.title)}</h3>
+            </a>
+            <div class="post-meta">
+              ${avatarHtml(p.author)}
+              <span class="post-meta-item fw-bold">${escapeHtml(p.author)}</span>
+              <span class="post-meta-sep">·</span>
+              <span class="post-meta-item" title="${new Date(p.created_at).toLocaleString()}">🕒 ${formatDate(p.created_at)}</span>
+              <span class="post-meta-sep">·</span>
+              <span class="post-meta-item">📖 ${rt}</span>
+            </div>
+            <p class="post-excerpt">${escapeHtml(p.excerpt || p.body?.slice(0,200) || '')}</p>
+          </div>
+          <div class="post-card-footer">
+            <div class="d-flex align-center gap-sm">
+              <span class="post-meta-item">💬 ${p.comment_count} comment${p.comment_count !== 1 ? 's' : ''}</span>
+            </div>
+            <div class="post-card-actions">
+              <a href="/post/${p.id}" class="btn btn-surface btn-sm">Read →</a>
+              ${isOwner ? `
+                <a href="/edit/${p.id}" class="btn btn-ghost btn-sm">✏️</a>
+                <button class="btn btn-ghost btn-sm" onclick="deletePost(${p.id}, this)" aria-label="Delete post">🗑️</button>
+              ` : ''}
+            </div>
+          </div>
+        </article>`;
+    }).join('');
+  }
+
+  // ── Render pagination ─────────────────────────────────────────────────────────
+  function renderPagination(d) {
+    const el = document.getElementById('pagination');
+    if (d.pages <= 1) { el.innerHTML = ''; return; }
+    const range = (a, b) => Array.from({ length: b - a + 1 }, (_, i) => a + i);
+    let pages = new Set([1, d.pages]);
+    range(Math.max(1, d.current_page - 2), Math.min(d.pages, d.current_page + 2)).forEach(p => pages.add(p));
+    pages = [...pages].sort((a,b) => a-b);
+
+    let html = `<button class="page-btn" onclick="loadPosts(${d.current_page-1})" ${!d.has_prev?'disabled':''}>‹</button>`;
+    let prev = null;
+    for (const p of pages) {
+      if (prev && p - prev > 1) html += `<span class="page-btn" style="opacity:.35;cursor:default">…</span>`;
+      html += `<button class="page-btn ${p === d.current_page ? 'active' : ''}" onclick="loadPosts(${p})" aria-current="${p === d.current_page ? 'page' : 'false'}">${p}</button>`;
+      prev = p;
+    }
+    html += `<button class="page-btn" onclick="loadPosts(${d.current_page+1})" ${!d.has_next?'disabled':''}>›</button>`;
+    el.innerHTML = html;
+  }
+
+  // ── Load posts ────────────────────────────────────────────────────────────────
+  async function loadPosts(page = 1) {
+    currentPage = page;
+    document.getElementById('posts-list').innerHTML = skeletonCards(4);
+    document.getElementById('pagination').innerHTML = '';
+
+    const params = new URLSearchParams({ page, per_page: 8 });
+    if (currentSearch) params.append('search', currentSearch);
+
+    const { ok, data } = await api.get(`/api/posts?${params}`);
+    if (!ok) { showAlert('Failed to load posts. Please refresh.'); return; }
+
+    document.getElementById('posts-count').textContent = `${data.total} post${data.total !== 1 ? 's' : ''}`;
+    document.getElementById('stat-posts').textContent = data.total;
+    renderPosts(data.posts, state.user);
+    renderPagination(data);
+    if (page > 1) document.getElementById('posts').scrollIntoView({ behavior: 'smooth' });
+  }
+
+  // ── Delete post ───────────────────────────────────────────────────────────────
+  async function deletePost(postId, btn) {
+    if (!await confirmModal('Delete Post', 'This will permanently delete the post and all its comments.')) return;
+    setButtonLoading(btn, true);
+    const { ok, data } = await api.delete(`/api/posts/${postId}`);
+    if (ok) { showAlert('Post deleted.', 'success'); loadPosts(currentPage); }
+    else { showAlert(data.error || 'Delete failed.'); setButtonLoading(btn, false); }
+  }
+
+  // ── Search ────────────────────────────────────────────────────────────────────
+  const searchInput = document.getElementById('search-input');
+  function doSearch() { currentSearch = searchInput.value.trim(); loadPosts(1); }
+  document.getElementById('search-btn').addEventListener('click', doSearch);
+  searchInput.addEventListener('keydown', e => e.key === 'Enter' && doSearch());
+  searchInput.addEventListener('input', () => { if (!searchInput.value && currentSearch) { currentSearch = ''; loadPosts(1); } });
+
+  // ── Init ──────────────────────────────────────────────────────────────────────
+  document.addEventListener('DOMContentLoaded', async () => {
+    await loadCurrentUser();
+    if (state.user) {
+      document.getElementById('hero-actions').innerHTML = `
+        <a href="/create" class="btn btn-primary btn-lg">✏️ Write a Post</a>
+        <a href="#posts" class="btn btn-surface btn-lg">Read Posts ↓</a>`;
+    }
+    loadPosts();
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Edit Post – Blog Platform</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,400;0,14..32,600;0,14..32,700;0,14..32,800;0,14..32,900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body>
+<nav class="navbar">
+  <div class="container nav-inner">
+    <a href="/" class="nav-brand">📝Blog<span class="brand-dot">.</span><span>Platform</span></a>
+    <div class="nav-links" id="nav-links"></div>
+  </div>
+</nav>
+
+<main>
+  <div class="container" style="max-width:740px">
+
+    <div class="section-header mb-3" style="margin-top:.5rem">
+      <div>
+        <h1 style="font-size:1.65rem">✏️ Edit Post</h1>
+        <p class="text-muted text-sm mt-1">Update your post — changes are saved immediately.</p>
+      </div>
+      <div class="d-flex gap-sm">
+        <a href="/post/{{ post_id }}" class="btn btn-ghost btn-sm">← Cancel</a>
+      </div>
+    </div>
+
+    <!-- Loading state -->
+    <div id="loading-state" class="loading-center">
+      <span class="spinner spinner-primary" style="width:1.4em;height:1.4em"></span>
+      Loading post…
+    </div>
+
+    <!-- Editor -->
+    <div class="card editor-card hidden" id="form-card">
+
+      <div class="editor-toolbar" role="toolbar" aria-label="Formatting shortcuts">
+        <button type="button" class="editor-toolbar-btn" data-wrap="**" title="Bold"><strong>B</strong></button>
+        <button type="button" class="editor-toolbar-btn" data-wrap="*" title="Italic"><em>I</em></button>
+        <div class="editor-toolbar-sep"></div>
+        <button type="button" class="editor-toolbar-btn" data-prefix="## " title="Heading">H2</button>
+        <button type="button" class="editor-toolbar-btn" data-prefix="### " title="Sub-heading">H3</button>
+        <div class="editor-toolbar-sep"></div>
+        <button type="button" class="editor-toolbar-btn" data-prefix="- " title="Bullet list">• List</button>
+        <button type="button" class="editor-toolbar-btn" data-prefix="> " title="Blockquote">" Quote</button>
+        <button type="button" class="editor-toolbar-btn" data-wrap="`" title="Inline code">&lt;/&gt;</button>
+        <div style="flex:1"></div>
+        <span class="autosave-indicator" id="autosave-indicator">✅ Draft saved</span>
+      </div>
+
+      <div class="card-body">
+        <form id="edit-form" novalidate>
+
+          <div class="form-group" id="group-title" style="margin-bottom:1.5rem">
+            <input class="form-input" type="text" id="title" name="title"
+              placeholder="Your post title…"
+              maxlength="200" required
+              style="font-size:1.2rem;font-weight:700;border-color:transparent;border-bottom-color:var(--clr-border);border-radius:0;padding-left:0;background:transparent;box-shadow:none" />
+            <div class="field-footer">
+              <span class="form-error" id="err-title" style="margin-top:0">Title is required.</span>
+              <span class="char-count" id="title-count">0 / 200</span>
+            </div>
+          </div>
+
+          <div class="form-group" id="group-body">
+            <textarea class="form-textarea" id="body" name="body"
+              placeholder="Your post content…"
+              style="min-height:320px;resize:none;line-height:1.8;font-size:1rem" required></textarea>
+            <div class="field-footer">
+              <span class="form-error" id="err-body" style="margin-top:0">Content is required.</span>
+              <span class="char-count" id="body-count">0</span>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:.75rem;justify-content:flex-end;flex-wrap:wrap;margin-top:.5rem">
+            <a href="/post/{{ post_id }}" class="btn btn-ghost">Discard</a>
+            <button type="submit" class="btn btn-primary btn-lg" id="submit-btn">💾 Save Changes</button>
+          </div>
+
+        </form>
+      </div>
+
+      <div class="editor-meta">
+        <span>Words: <strong id="word-count">0</strong></span>
+        <span>Reading time: <strong id="read-time">0 min</strong></span>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<script src="/static/js/app.js"></script>
+<script>
+  const POST_ID = {{ post_id }};
+  const titleEl = document.getElementById('title');
+  const bodyEl  = document.getElementById('body');
+
+  // ── Load existing post ────────────────────────────────────────────────────────
+  async function loadPost() {
+    const { ok, data } = await api.get(`/api/posts/${POST_ID}`);
+    if (!ok) { showAlert('Failed to load post.'); return; }
+
+    titleEl.value = data.title;
+    bodyEl.value  = data.body;
+    document.title = `Edit: ${data.title} – Blog Platform`;
+
+    titleEl.dispatchEvent(new Event('input'));
+    bodyEl.dispatchEvent(new Event('input'));
+
+    document.getElementById('loading-state').classList.add('hidden');
+    document.getElementById('form-card').classList.remove('hidden');
+  }
+
+  // ── Auto-resize ───────────────────────────────────────────────────────────────
+  autoResize(bodyEl);
+
+  // ── Char counter ──────────────────────────────────────────────────────────────
+  addCharCounter(titleEl, document.getElementById('title-count'), 200);
+
+  // ── Live stats ────────────────────────────────────────────────────────────────
+  function updateStats() {
+    const wc   = wordCount(bodyEl.value);
+    const mins = Math.max(1, Math.ceil(wc / 200));
+    document.getElementById('word-count').textContent = wc;
+    document.getElementById('read-time').textContent  = `${mins} min`;
+    document.getElementById('body-count').textContent = `${bodyEl.value.length} chars`;
+  }
+  bodyEl.addEventListener('input', updateStats);
+  updateStats();
+
+  // ── Autosave (edit draft) ─────────────────────────────────────────────────────
+  initAutosave(`edit_${POST_ID}`, titleEl, bodyEl, document.getElementById('autosave-indicator'));
+
+  // ── Toolbar ───────────────────────────────────────────────────────────────────
+  document.querySelectorAll('.editor-toolbar-btn[data-wrap]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const wrap = btn.dataset.wrap;
+      const start = bodyEl.selectionStart, end = bodyEl.selectionEnd;
+      const selected = bodyEl.value.slice(start, end) || 'text';
+      bodyEl.setRangeText(`${wrap}${selected}${wrap}`, start, end, 'select');
+      bodyEl.focus(); bodyEl.dispatchEvent(new Event('input'));
+    });
+  });
+  document.querySelectorAll('.editor-toolbar-btn[data-prefix]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const prefix = btn.dataset.prefix;
+      const lineStart = bodyEl.value.lastIndexOf('\n', bodyEl.selectionStart - 1) + 1;
+      bodyEl.setRangeText(prefix, lineStart, lineStart, 'end');
+      bodyEl.focus(); bodyEl.dispatchEvent(new Event('input'));
+    });
+  });
+
+  // ── Validation helpers ────────────────────────────────────────────────────────
+  function setErr(errId, grpId, show) {
+    document.getElementById(errId).style.display = show ? 'flex' : 'none';
+    document.getElementById(grpId).classList.toggle('field-error', show);
+  }
+
+  // ── Submit ────────────────────────────────────────────────────────────────────
+  document.getElementById('edit-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const title = titleEl.value.trim();
+    const body  = bodyEl.value.trim();
+    const btn   = document.getElementById('submit-btn');
+
+    let valid = true;
+    setErr('err-title', 'group-title', !title); if (!title) valid = false;
+    setErr('err-body',  'group-body',  !body);  if (!body)  valid = false;
+    if (!valid) return;
+
+    setButtonLoading(btn, true);
+    const { ok, data } = await api.put(`/api/posts/${POST_ID}`, { title, body });
+
+    if (ok) {
+      showAlert('Post updated! ✅', 'success');
+      setTimeout(() => window.location.href = `/post/${POST_ID}`, 700);
+    } else {
+      showAlert(data.error || 'Update failed.');
+      setButtonLoading(btn, false);
+    }
+  });
+
+  loadPost();
+</script>
+</body>
+</html>

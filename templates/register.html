@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Create Account – Blog Platform</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,400;0,14..32,600;0,14..32,700;0,14..32,800;0,14..32,900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body>
+<nav class="navbar">
+  <div class="container nav-inner">
+    <a href="/" class="nav-brand">📝Blog<span class="brand-dot">.</span><span>Platform</span></a>
+    <div class="nav-links">
+      <span class="text-muted text-sm">Have an account?</span>
+      <a href="/login" class="btn btn-ghost btn-sm">Login</a>
+    </div>
+  </div>
+</nav>
+
+<main>
+  <div class="auth-layout">
+    <div class="card auth-card">
+      <div class="auth-brand-header">
+        <span class="big-icon">🚀</span>
+        <h2>Create Your Account</h2>
+        <p>Join thousands of writers &amp; readers — it's free</p>
+      </div>
+
+      <div class="card-body">
+        <form id="register-form" novalidate>
+
+          <div class="form-group" id="group-username">
+            <label class="form-label" for="username">Username</label>
+            <div class="input-wrapper">
+              <span class="input-icon" style="font-style:normal">✍️</span>
+              <input class="form-input" type="text" id="username"
+                placeholder="cool_writer_42" autocomplete="username"
+                required minlength="3" maxlength="80" spellcheck="false" />
+            </div>
+            <span class="form-hint">3–80 characters, letters, numbers, underscores.</span>
+            <span class="form-error" id="err-username">Username must be at least 3 characters.</span>
+          </div>
+
+          <div class="form-group" id="group-email">
+            <label class="form-label" for="email">Email Address</label>
+            <div class="input-wrapper">
+              <span class="input-icon">@</span>
+              <input class="form-input" type="email" id="email"
+                placeholder="you@example.com" autocomplete="email"
+                required spellcheck="false" />
+            </div>
+            <span class="form-error" id="err-email">Please enter a valid email address.</span>
+          </div>
+
+          <div class="form-group" id="group-password">
+            <label class="form-label" for="password">Password</label>
+            <div class="input-wrapper">
+              <input class="form-input" type="password" id="password"
+                placeholder="Min. 6 characters" autocomplete="new-password"
+                required minlength="6" style="padding-right:3rem" />
+              <button type="button" class="pw-toggle" id="toggle-pw" aria-label="Show/hide password">👁</button>
+            </div>
+            <!-- Strength meter -->
+            <div class="pw-strength" id="pw-strength" aria-hidden="true">
+              <div class="pw-strength-bar"><div class="pw-strength-bar-fill" id="pw-bar"></div></div>
+              <span class="pw-strength-label" id="pw-label"></span>
+            </div>
+            <span class="form-error" id="err-password">Password must be at least 6 characters.</span>
+          </div>
+
+          <div class="form-group" id="group-confirm">
+            <label class="form-label" for="confirm">Confirm Password</label>
+            <div class="input-wrapper">
+              <input class="form-input" type="password" id="confirm"
+                placeholder="Repeat your password" autocomplete="new-password"
+                required style="padding-right:3rem" />
+              <span class="pw-toggle" id="confirm-match" style="cursor:default;font-size:1rem;opacity:0;transition:opacity .2s"></span>
+            </div>
+            <span class="form-error" id="err-confirm">Passwords do not match.</span>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-block btn-lg" id="submit-btn">
+            Create Account
+          </button>
+
+          <div class="auth-divider">or</div>
+          <p class="auth-footer">
+            Already have an account? <a href="/login"><strong>Sign in →</strong></a>
+          </p>
+        </form>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script src="/static/js/app.js"></script>
+<script>
+  // Password toggle
+  document.getElementById('toggle-pw').addEventListener('click', () => {
+    const pw = document.getElementById('password');
+    const btn = document.getElementById('toggle-pw');
+    pw.type = pw.type === 'password' ? 'text' : 'password';
+    btn.textContent = pw.type === 'password' ? '👁' : '🙈';
+  });
+
+  // Strength meter
+  const STRENGTHS = [
+    { label: 'Very weak',  color: '#ef4444', w: '20%' },
+    { label: 'Weak',       color: '#f97316', w: '40%' },
+    { label: 'Fair',       color: '#f59e0b', w: '60%' },
+    { label: 'Good',       color: '#84cc16', w: '80%' },
+    { label: 'Strong 💪',  color: '#10b981', w: '100%' },
+  ];
+  document.getElementById('password').addEventListener('input', function () {
+    const v = this.value;
+    let score = 0;
+    if (v.length >= 6)  score++;
+    if (v.length >= 10) score++;
+    if (/[A-Z]/.test(v) && /[a-z]/.test(v)) score++;
+    if (/[0-9]/.test(v))      score++;
+    if (/[^A-Za-z0-9]/.test(v)) score++;
+    const s = Math.min(score - 1, 4);
+    const fill  = document.getElementById('pw-bar');
+    const label = document.getElementById('pw-label');
+    if (v) {
+      fill.style.width      = STRENGTHS[s].w;
+      fill.style.background = STRENGTHS[s].color;
+      label.textContent     = STRENGTHS[s].label;
+    } else {
+      fill.style.width = '0%';
+      label.textContent = '';
+    }
+    checkMatch();
+  });
+
+  // Live confirm match indicator
+  function checkMatch() {
+    const pw = document.getElementById('password').value;
+    const cf = document.getElementById('confirm').value;
+    const indicator = document.getElementById('confirm-match');
+    if (!cf) { indicator.style.opacity = '0'; return; }
+    indicator.style.opacity = '1';
+    indicator.textContent = pw === cf ? '✅' : '❌';
+  }
+  document.getElementById('confirm').addEventListener('input', checkMatch);
+
+  // Validation helper
+  function setErr(errId, grpId, show) {
+    document.getElementById(errId).style.display = show ? 'flex' : 'none';
+    document.getElementById(grpId).classList.toggle('field-error', show);
+  }
+
+  document.getElementById('register-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const username = document.getElementById('username').value.trim();
+    const email    = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    const confirm  = document.getElementById('confirm').value;
+    const btn      = document.getElementById('submit-btn');
+
+    let valid = true;
+    setErr('err-username', 'group-username', !username || username.length < 3); if (!username || username.length < 3) valid = false;
+    setErr('err-email',    'group-email',    !email || !email.includes('@'));    if (!email || !email.includes('@'))    valid = false;
+    setErr('err-password', 'group-password', !password || password.length < 6); if (!password || password.length < 6) valid = false;
+    setErr('err-confirm',  'group-confirm',  password !== confirm);              if (password !== confirm)              valid = false;
+    if (!valid) return;
+
+    setButtonLoading(btn, true);
+    const { ok, data } = await api.post('/api/register', { username, email, password });
+
+    if (ok) {
+      showAlert('Account created! Welcome aboard 🎉', 'success');
+      setTimeout(() => window.location.href = '/', 800);
+    } else {
+      showAlert(data.error || 'Registration failed. Please try again.');
+      setButtonLoading(btn, false);
+    }
+  });
+</script>
+</body>
+</html>
